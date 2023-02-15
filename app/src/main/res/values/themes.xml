@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <style name="Theme.Metro" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">#183543</item>
+    </style>
+
+    <style name="NightAdjusted.Theme.Nia" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">#183543</item>
+        <item name="android:windowLightStatusBar" tools:targetApi="23">true</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="27">true</item>
+    </style>
+
+    <!-- Allows us to override platform level specific attributes in their
+         respective values-vXX folder. -->
+    <style name="PlatformAdjusted.Theme.Nia" parent="NightAdjusted.Theme.Nia">
+        <item name="android:statusBarColor">#183543</item>
+    </style>
+
+    <!-- The final theme we use -->
+    <style name="Theme.Nia" parent="PlatformAdjusted.Theme.Nia" />
+
+    <style name="NightAdjusted.Theme.Splash" parent="Theme.SplashScreen">
+        <item name="android:windowLightStatusBar" >false</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="27">true</item>
+    </style>
+
+    <style name="Theme.Nia.Splash" parent="NightAdjusted.Theme.Splash">
+        <item name="android:statusBarColor">#183543</item>
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_round</item>
+        <item name="postSplashScreenTheme">@style/Theme.Nia</item>
+    </style>
+</resources>

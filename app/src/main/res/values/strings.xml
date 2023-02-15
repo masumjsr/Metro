@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">MRT Map</string>
+    <string name="hint_search_query">Search...</string>
+    <string name="unknown_exception">unknown</string>
+    <string name="error_details">details</string>
+    <string name="error_occurred">error</string>
+    <string name="close_app">close</string>
+    <string name="restart_app">restart</string>
+</resources>

@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "662142428470",
+    "project_id": "metro-59dfb",
+    "storage_bucket": "metro-59dfb.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:662142428470:android:7f19b3fea1d644e7f3ff97",
+        "android_client_info": {
+          "package_name": "com.masum.metro"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "662142428470-p39cvd0mnt2n4u8tkpsm2d265tblptfc.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAXO8l0fJ0tnGJajmE7M6OYVm42i5bMF5U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "662142428470-p39cvd0mnt2n4u8tkpsm2d265tblptfc.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
