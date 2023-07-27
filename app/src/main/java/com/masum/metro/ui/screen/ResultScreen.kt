@@ -27,13 +27,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.facebook.ads.Ad
-import com.facebook.ads.AdListener
-import com.facebook.ads.InterstitialAdListener
-import com.google.android.gms.ads.AdError
-import com.google.android.gms.ads.AdRequest
-import com.google.android.gms.ads.FullScreenContentCallback
-import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.interstitial.InterstitialAd
 import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
 import com.masum.metro.data.model.ResultModel
@@ -50,9 +43,11 @@ fun ResultScreenRoute(
     val ad = viewModel.ad.collectAsStateWithLifecycle(initialValue = 0).value
     
     val context = LocalView.current.context
+
+    Log.i("123321", "ResultScreenRoute:ad response $ad")
     
-    if(ad==1)loadInterstitial(context)
-    else if(ad==2) loadFacebookInterstitial(context,onBackClick)
+   /* if(ad==1)*/loadInterstitial(context)
+   /* else if(ad==2) loadFacebookInterstitial(context,onBackClick)*/
 
     ResultScreen(resultModel = route,onBackClick,ad)
 
@@ -60,7 +55,6 @@ fun ResultScreenRoute(
 
 
 var mInterstitialAd: InterstitialAd? = null
-var facebookInterstitialAd:com.facebook.ads.InterstitialAd? =null
 
 
 
@@ -76,9 +70,22 @@ fun ResultScreen(resultModel: ResultModel, onBackClick: () -> Unit,ad:Int) {
         val context = LocalView.current.context
         BackHandler() {
 
-            if(ad==1)showInterstitial(context){onBackClick.invoke()}
-            if(ad==2) showFacebookInterstitial(context)
-            else onBackClick.invoke()
+
+            Log.i("123321", "ResultScreen: reesult is $ad")
+
+            when (ad) {
+                1,2 -> showInterstitial(context){
+
+                    onBackClick.invoke()
+                }
+          /*     3-> showFacebookInterstitial(context){
+                    onBackClick.invoke()
+
+                }*/
+                else -> {
+                    onBackClick.invoke()
+                }
+            }
         }
       
         Column(modifier = Modifier
@@ -128,13 +135,13 @@ fun ResultScreen(resultModel: ResultModel, onBackClick: () -> Unit,ad:Int) {
 
             Button(
                 onClick = {
-                    if(ad==1) {
-                        showInterstitial(context) { onBackClick.invoke() }
+                    when (ad) {
+                        1,2 -> {
+                            showInterstitial(context) { onBackClick.invoke() }
+                        }
+
+                        else -> onBackClick.invoke()
                     }
-                    if(ad==2) {
-                        showFacebookInterstitial(context)
-                    }
-                    else onBackClick.invoke()
                 },
                 shape = RoundedCornerShape(20),
                 modifier = Modifier

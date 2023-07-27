@@ -69,11 +69,19 @@ class MainViewModel @Inject constructor(
 
      fun getNetworkRequest(){
         viewModelScope.launch {
-            val response = networkRepository.networkRequest()
-            if(response.isSuccessful){
-                response.body()?.let {
-                    userRepository.updateAd(it.ad)
+            try {
+                val response = networkRepository.networkRequest()
+                if(response.isSuccessful){
+
+                    response.body()?.let {
+                        Log.i("123321", "getNetworkRequest: updating ad config to $it")
+                        userRepository.updateAd(it.ad)
+                    }
                 }
+                else {
+                    Log.i("123321", "getNetworkRequest: something went wrong")
+                }
+            } catch (e: Exception) {
             }
         }
     }

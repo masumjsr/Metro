@@ -1,5 +1,6 @@
 package com.masum.metro.ui.navigation
 
+import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
@@ -23,6 +24,7 @@ fun AppNavHost(
         RouteScreen(){from,to->
             navController.navigateToResult(from,to) }
         ResultScreen(){
+            Log.i("123321", "AppNavHost: pop back clicked")
             navController.popBackStack()
         }
         AboutScreen()

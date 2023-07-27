@@ -41,18 +41,9 @@ fun StationScreen(
     
     Scaffold { padding ->
         Column (horizontalAlignment = Alignment.CenterHorizontally){
-                Divider(
-                    modifier = Modifier
-                        .background(
-                            color = MaterialTheme.colorScheme.primary.copy(0.50f),
-                            RoundedCornerShape(50)
-                        )
-                        .padding(5.dp)
-                        .height(3.dp)
-                        .width(40.dp)
-                )
 
-            androidx.compose.material3.TextField(
+
+            TextField(
                 value = searchText,
                 onValueChange = { onQueryChanged ->
                     viewModel.updateSearchTextState(onQueryChanged)
@@ -77,7 +68,7 @@ fun StationScreen(
                     }
                 },
                 maxLines = 1,
-                colors = TextFieldDefaults.textFieldColors(containerColor = Color.Transparent, textColor = Color.Unspecified),
+                colors = TextFieldDefaults.textFieldColors(containerColor = Color.Transparent),
                 placeholder = { Text(text = "Search...") },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),

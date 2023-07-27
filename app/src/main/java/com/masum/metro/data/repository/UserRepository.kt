@@ -11,6 +11,7 @@ class UserRepository @Inject constructor(
     val userData : Flow<UserData> = preferenceDataSource.userData
 
     suspend fun updateAd(id:Int)=preferenceDataSource.updateTheme(id)
+    suspend fun updateLocation(lat:Double,lon:Double)=preferenceDataSource.updateLocation(lat,lon)
 
 
 

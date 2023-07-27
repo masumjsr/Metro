@@ -1,6 +1,11 @@
 package com.masum.metro.util
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.scrollable
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
@@ -20,14 +25,19 @@ fun ShowAlertDialog(
     onDismiss: () -> Unit,
     onAllowClick: () -> Unit,
 ) {
-
+    val scroll = rememberScrollState(0)
     AlertDialog(onDismissRequest = {},
 
         title = {
             Text(title)
         },
         text = {
-            Text(text)
+            Column(
+            ) {
+                Text(
+                    modifier = Modifier.verticalScroll(scroll),
+                            text=text)
+            }
         },
         confirmButton = {
             Text(

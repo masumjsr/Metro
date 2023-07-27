@@ -15,9 +15,24 @@ class PreferenceDataSource @Inject constructor(
     val userData = userPreferences.data
         .map {
             UserData(
-                ad =it.adConfig
+                ad =it.adConfig,
+                lat = it.lat,
+                lon = it.lon
             )
         }
+    suspend fun updateLocation(latValue:Double,lonValue:Double){
+        try {
+            userPreferences.updateData {
+                it.copy {
+                    lat=latValue
+                    lon=lonValue
+                }
+            }
+        }
+        catch(e: IllegalStateException){
+
+        }
+    }
     suspend fun updateTheme(themeId: Int){
         try {
             userPreferences.updateData {

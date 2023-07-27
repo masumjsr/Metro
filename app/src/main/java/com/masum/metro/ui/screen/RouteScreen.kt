@@ -1,17 +1,17 @@
 package com.masum.metro.ui.screen
 
-import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.*
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.ModalBottomSheetLayout
+import androidx.compose.material.ModalBottomSheetValue
 import androidx.compose.material3.*
-import androidx.compose.material3.Button
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalView
@@ -19,7 +19,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.masum.metro.data.model.Station
 import com.masum.metro.ui.viewmodel.MainViewModel
 import kotlinx.coroutines.launch
 
@@ -29,23 +28,16 @@ fun RouteScreenRoute(
 ) {
     RouteScreen(onResultClick)
 }
-
-@OptIn(ExperimentalMaterialApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RouteScreen(
-    onPickClick: (String, String) -> Unit,
-    mainViewModel: MainViewModel = hiltViewModel(),
-) {
-    val coroutineScope = rememberCoroutineScope()
-    val context = LocalView.current.context
+onPickClick: (String, String) -> Unit,
+mainViewModel: MainViewModel = hiltViewModel(),
+){
 
-
-
-    /*var from  by remember {
-    mutableStateOf(Station("",0.0,0,"","","",0.0))
-
-    }*/
-
+    val scope = rememberCoroutineScope()
+    val scaffoldState = rememberBottomSheetScaffoldState(
+    )
     val from by mainViewModel.fromField.collectAsStateWithLifecycle()
     val to by mainViewModel.toField.collectAsStateWithLifecycle()
 
@@ -53,63 +45,53 @@ fun RouteScreen(
 
 
 
-    val modalSheetState = rememberModalBottomSheetState(
-        initialValue = ModalBottomSheetValue.Hidden
-    )
+
     var isFrom by remember {
-        mutableStateOf(false)
+        mutableStateOf(true)
     }
-    BackHandler(enabled = modalSheetState.isVisible) {
-        coroutineScope.launch {
-            modalSheetState.animateTo(ModalBottomSheetValue.Hidden)
+    BackHandler(enabled = scaffoldState.bottomSheetState.isVisible) {
+        scope.launch {
+            scaffoldState.bottomSheetState.partialExpand()
         }
     }
 
-    val roundedCornerRadius = 12.dp
-    ModalBottomSheetLayout(
-        sheetState = modalSheetState,
 
-        sheetShape = RoundedCornerShape(
-            topStart = roundedCornerRadius,
-            topEnd = roundedCornerRadius
-        ),
+
+    BottomSheetScaffold(
+        scaffoldState = scaffoldState,
+        sheetPeekHeight = 0.dp,
         sheetContent = {
             StationScreen(onClick = {
-                coroutineScope.launch {
-                    modalSheetState.animateTo(ModalBottomSheetValue.Hidden)
+                scope.launch {
+
+                    if(scaffoldState.bottomSheetState.isVisible)
+                    scaffoldState.bottomSheetState.partialExpand()
+
+                  //  modalSheetState.animateTo(ModalBottomSheetValue.Hidden)
                 }
                 if (isFrom) mainViewModel.fromField.value=it
                 else mainViewModel.toField.value=it
 
             },
                 onClose = {
-                    coroutineScope.launch {
-                        modalSheetState.animateTo(ModalBottomSheetValue.Hidden)
+                    scope.launch {
+                       scaffoldState.bottomSheetState.hide()
                     }
                 },
                 onFocus = {
-                    coroutineScope.launch {
-                        modalSheetState.animateTo(ModalBottomSheetValue.Expanded)
+                    scope.launch {
+                        scaffoldState.bottomSheetState.expand()
                     }
                 }
 
-                )
-        })
-    {
+            )
+        }) { innerPadding ->
 
-        val snackbarHostState = remember { SnackbarHostState() }
-        val scope = rememberCoroutineScope()
 
-        androidx.compose.material3.Scaffold (
-            snackbarHost = { SnackbarHost(snackbarHostState) },
-            topBar = {
-
-            },
-                ){
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(it)
+                    .padding(innerPadding)
                     .padding(10.dp)
             ) {
                 Text(text = "From")
@@ -117,8 +99,8 @@ fun RouteScreen(
                     modifier = Modifier
                         .clickable {
                             isFrom = true
-                            coroutineScope.launch {
-                                modalSheetState.animateTo(ModalBottomSheetValue.HalfExpanded)
+                            scope.launch {
+                                scaffoldState.bottomSheetState.expand()
                             }
 
                         }
@@ -128,12 +110,12 @@ fun RouteScreen(
                 )
 
                 Text(text = "To")
-                androidx.compose.material3.TextField(
+                TextField(
                     modifier = Modifier
                         .clickable {
                             isFrom = false
-                            coroutineScope.launch {
-                                modalSheetState.animateTo(ModalBottomSheetValue.HalfExpanded)
+                            scope.launch {
+                                scaffoldState.bottomSheetState.expand()
                             }
                         }
                         .fillMaxWidth()
@@ -144,27 +126,26 @@ fun RouteScreen(
                 Button(
                     onClick = {
                         if(from.exploreid.isEmpty()) {
-                            coroutineScope.launch { // using the `coroutineScope` to `launch` showing the snackbar
+                            scope.launch { // using the `coroutineScope` to `launch` showing the snackbar
 
                                 scope.launch {
-                                    snackbarHostState.showSnackbar(
+                                    scaffoldState.snackbarHostState
+                                        .showSnackbar(
                                         "Select Start Destination",
                                     )
                                 }
                             }
                         }
                         else if(from.exploreid.isEmpty()) {
-                            coroutineScope.launch { // using the `coroutineScope` to `launch` showing the snackbar
-
-                                scope.launch {
-                                    snackbarHostState.showSnackbar(
-                                        "Select End  Destination",
+                            scope.launch {
+                                scaffoldState.snackbarHostState
+                                    .showSnackbar(
+                                        "Select Start Destination",
                                     )
-                                }
                             }
                         }
-                       else onPickClick.invoke(from.exploreid,to.exploreid)
-                              },
+                        else onPickClick.invoke(from.exploreid,to.exploreid)
+                    },
                     shape = RoundedCornerShape(20),
                     modifier = Modifier
                         .fillMaxWidth()
@@ -177,10 +158,8 @@ fun RouteScreen(
             }
         }
 
-    }
 
 }
-
 
 
 @Preview

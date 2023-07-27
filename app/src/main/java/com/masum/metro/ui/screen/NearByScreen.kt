@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.Activity.RESULT_OK
 import android.content.IntentSender
 import android.content.pm.PackageManager
+import android.location.Location
 import android.os.Looper
 import android.util.Log
 import android.widget.Toast
@@ -25,15 +26,24 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.*
+import com.google.android.gms.tasks.CancellationToken
+import com.google.android.gms.tasks.CancellationTokenSource
+import com.google.android.gms.tasks.OnTokenCanceledListener
 import com.google.android.gms.tasks.Task
 import com.masum.metro.data.model.LocationDetails
 import com.masum.metro.ui.viewmodel.NearbyViewModel
@@ -46,30 +56,23 @@ fun NearByScreenRoute() {
 NearByScreen()
 }
 
+
 @OptIn(ExperimentalPermissionsApi::class, ExperimentalMaterialApi::class)
 @Composable
 fun NearByScreen(
     viewModel: NearbyViewModel = hiltViewModel(),
 ) {
 
+    val nearby by viewModel.stations.collectAsStateWithLifecycle()
+
+    Log.i("123321", "NearByScreen: nearby data is $nearby")
     val context = LocalContext.current
 
 
 
     var refreshing by remember { mutableStateOf(true)}
-    var isShowDialog by remember { mutableStateOf(true)}
+    var isShowDialog by remember { mutableStateOf(false)}
 
- if(isShowDialog){
-     ShowAlertDialog(
-         title = "Disclaimer",
-         text = "This app colllects location data to enable 'Search Nearby Metro Location' even when the app is closed or not in use.",
-         positiveButton ="Ok" ,
-         negativeButton ="" ,
-         onDismiss = { }) {
-         isShowDialog = false
-
-     }
- }
 
     val permissionState =  rememberMultiplePermissionsState(permissions =  listOf(
         Manifest.permission.ACCESS_COARSE_LOCATION,
@@ -79,15 +82,6 @@ fun NearByScreen(
 
 
         val fusedLocationClient =LocationServices.getFusedLocationProviderClient(context)
-        val  locationCallback = object : LocationCallback() {
-            override fun onLocationResult(p0: LocationResult) {
-                for (lo in p0.locations) {
-                    // Update UI with location data
-                    refreshing=false
-                    viewModel.location.value = LocationDetails(lo.latitude, lo.longitude)
-                }
-            }
-        }
 
 
         val locationRequest = LocationRequest.Builder(Priority.PRIORITY_BALANCED_POWER_ACCURACY, 5000)
@@ -102,15 +96,26 @@ fun NearByScreen(
             if (activityResult.resultCode == RESULT_OK) {
                 Log.i("123321", "NearByScreen: result function is OK")
                 if (permissionState.allPermissionsGranted) {
-                    fusedLocationClient.requestLocationUpdates(
-                        locationRequest,
-                        locationCallback,
-                        Looper.getMainLooper()
-                    )
+                    fusedLocationClient.getCurrentLocation(Priority.PRIORITY_BALANCED_POWER_ACCURACY, object : CancellationToken() {
+                        override fun onCanceledRequested(p0: OnTokenCanceledListener) = CancellationTokenSource().token
+
+                        override fun isCancellationRequested() = false
+                    })
+                        .addOnSuccessListener { location: Location? ->
+                            if (location == null)
+                                Toast.makeText(context, "Cannot get location.", Toast.LENGTH_SHORT)
+                                    .show()
+                            else {
+                                refreshing=false
+
+                             viewModel.updateLocaton(location.latitude, location.longitude)
+                            }
+                        }
                 }
             }
-           
+
         }
+
 
 
         val client: SettingsClient = LocationServices.getSettingsClient(context)
@@ -122,28 +127,70 @@ fun NearByScreen(
             client.checkLocationSettings(builder.build())
 
 
-        fusedLocationClient.requestLocationUpdates(
-            locationRequest,
-            locationCallback,
-            Looper.getMainLooper())
+
+
+var intentSenderRequest: IntentSenderRequest? by remember { mutableStateOf(null)}
+        if(isShowDialog){
+            ShowAlertDialog(
+                title = "Disclaimer",
+                text ="We need location permission to find the nearby metro station. We do not share or store your location. We  do not collect your  location in Background",
+                positiveButton ="Ok" ,
+                negativeButton ="" ,
+                onDismiss = { }) {
+                settingResultRequest.launch(intentSenderRequest)
+                isShowDialog = false
+
+            }
+        }
+
         gpsSettingTask.addOnSuccessListener {
 
-                Log.i("123321", "NearByScreen:  this function is called")
 
-                fusedLocationClient.requestLocationUpdates(
-                    locationRequest,
-                    locationCallback,
-                    Looper.getMainLooper())
+            if (ActivityCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                ) == PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
+                    context
+                    ,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                ) == PackageManager.PERMISSION_GRANTED
+            ) {
+                // TODO: Consider calling
+                //    ActivityCompat#requestPermissions
+                // here to request the missing permissions, and then overriding
+                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                //                                          int[] grantResults)
+                // to handle the case where the user grants the permission. See the documentation
+                // for ActivityCompat#requestPermissions for more details.
+
+                fusedLocationClient.getCurrentLocation(Priority.PRIORITY_BALANCED_POWER_ACCURACY, object : CancellationToken() {
+                    override fun onCanceledRequested(p0: OnTokenCanceledListener) = CancellationTokenSource().token
+
+                    override fun isCancellationRequested() = false
+                })
+                    .addOnSuccessListener { location: Location? ->
+                        if (location == null)
+                            Toast.makeText(context, "Cannot get location.", Toast.LENGTH_SHORT)
+                                .show()
+                        else {
+                            refreshing=false
+                            viewModel.updateLocaton(location.latitude, location.longitude)
+
+                        }
+                    }
+            }
 
 
         }
         gpsSettingTask.addOnFailureListener { exception ->
             if (exception is ResolvableApiException) {
                 try {
-                    val intentSenderRequest = IntentSenderRequest
+                    intentSenderRequest = IntentSenderRequest
                         .Builder(exception.resolution)
                         .build()
+
                     settingResultRequest.launch(intentSenderRequest)
+
                 } catch (sendEx: IntentSender.SendIntentException) {
                     Toast.makeText(context, sendEx.message, Toast.LENGTH_SHORT).show()
                     // ignore here
@@ -152,21 +199,28 @@ fun NearByScreen(
         }
 
 
-
-
-
-
         val refreshScope = rememberCoroutineScope()
 
-        val nearby by viewModel.stations.collectAsStateWithLifecycle()
+       
 
         fun refresh() = refreshScope.launch {
 
             refreshing = true
-            fusedLocationClient.requestLocationUpdates(
-                locationRequest,
-                locationCallback,
-                Looper.getMainLooper())
+            fusedLocationClient.getCurrentLocation(Priority.PRIORITY_BALANCED_POWER_ACCURACY, object : CancellationToken() {
+                override fun onCanceledRequested(p0: OnTokenCanceledListener) = CancellationTokenSource().token
+
+                override fun isCancellationRequested() = false
+            })
+                .addOnSuccessListener { location: Location? ->
+                    if (location == null)
+                        Toast.makeText(context, "Cannot get location.", Toast.LENGTH_SHORT)
+                            .show()
+                    else {
+                        refreshing=false
+                        viewModel.updateLocaton(location.latitude, location.longitude)
+
+                    }
+                }
         }
 
         val state = rememberPullRefreshState(refreshing, ::refresh)
@@ -178,24 +232,22 @@ fun NearByScreen(
                     top = 0.dp
                 )) {
             LazyColumn(Modifier.fillMaxSize()) {
-                if (!refreshing) {
-                    items(nearby) {
+                items(nearby) {
 
-                        ElevatedCard( modifier = Modifier
-                            .padding(8.dp)
-                            .fillMaxWidth()) {
-                            Row(
-                                modifier = Modifier
-                                    .padding(10.dp)
-                                    .fillMaxWidth()
-                                    .padding(
-                                        10.dp
-                                    ),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                androidx.compose.material3.Text(text = it.station.name_en)
-                                androidx.compose.material3.Text(text = it.distance)
-                            }
+                    ElevatedCard( modifier = Modifier
+                        .padding(8.dp)
+                        .fillMaxWidth()) {
+                        Row(
+                            modifier = Modifier
+                                .padding(10.dp)
+                                .fillMaxWidth()
+                                .padding(
+                                    10.dp
+                                ),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            androidx.compose.material3.Text(text = it.station.name_en)
+                            androidx.compose.material3.Text(text = it.distance)
                         }
                     }
                 }
@@ -217,13 +269,12 @@ fun NearByScreen(
                 ){
             val textToShow = if (permissionState.shouldShowRationale) {
 
-                "The Location is important for this app. Please grant the permission."
+                "We need location permission to find the nearby metro station. We do not share or store your location. We  do not collect your  location in Background"
             } else {
 
-                "Location permission required for this feature to be available. " +
-                        "Please grant the permission"
+                "We need location permission to find the nearby metro station. We do not share or store your location. We  do not collect your  location in Background"
             }
-            androidx.compose.material3.Text(textToShow)
+            androidx.compose.material3.Text(textToShow, textAlign = TextAlign.Center)
             Button(onClick = { permissionState.launchMultiplePermissionRequest() }) {
                 Text("Request permission")
             }
@@ -232,45 +283,8 @@ fun NearByScreen(
 
 
 
-   val fusedLocationClient =LocationServices.getFusedLocationProviderClient(context)
-   val  locationCallback = object : LocationCallback() {
-       override fun onLocationAvailability(p0: LocationAvailability) {
-           super.onLocationAvailability(p0)
 
-           Log.i("123321", "onLocationAvailability: ")
-       }
-        override fun onLocationResult(p0: LocationResult) {
-            Log.i("123321", "onLocationResult: $p0")
-            for (lo in p0.locations) {
-                // Update UI with location data
-               viewModel.location.value = LocationDetails(lo.latitude, lo.longitude)
-            }
-        }
-    }
 
-    val launcherMultiplePermissions = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissionsMap ->
-
-        val areGranted = permissionsMap.values.reduce { acc, next -> acc && next }
-        Log.i("123321", "NearByScreen: are granted=$areGranted" +
-                "")
-        if (areGranted) {
-            val locationRequest = LocationRequest.create().apply {
-                interval = 10000
-                fastestInterval = 5000
-                priority = LocationRequest.PRIORITY_HIGH_ACCURACY
-            }
-            fusedLocationClient.requestLocationUpdates(
-                locationRequest,
-                locationCallback,
-                Looper.getMainLooper()
-            )
-            Toast.makeText(context, "Permission Granted", Toast.LENGTH_SHORT).show()
-        } else {
-            Toast.makeText(context, "Permission Denied", Toast.LENGTH_SHORT).show()
-        }
-    }
 
 
 

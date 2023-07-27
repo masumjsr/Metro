@@ -1,5 +1,6 @@
 package com.masum.metro.ui.theme
 
+import android.app.Activity
 import android.os.Build
 import androidx.annotation.ChecksSdkIntAtLeast
 import androidx.annotation.VisibleForTesting
@@ -10,9 +11,12 @@ import androidx.compose.material.lightColors
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
+import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.google.samples.apps.nowinandroid.core.designsystem.theme.*
 
 /**
@@ -216,17 +220,39 @@ fun MetroTheme(
         else -> TintTheme()
     }
     // Composition locals
-    CompositionLocalProvider(
-        LocalGradientColors provides gradientColors,
-        LocalBackgroundTheme provides backgroundTheme,
-        LocalTintTheme provides tintTheme,
-    ) {
-        MaterialTheme(
+
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        val currentWindow = (view.context as? Activity)?.window
+            ?: throw Exception("Not in an activity - unable to get Window reference")
+
+        val systemUiController = rememberSystemUiController()
+        if(darkTheme){
+            systemUiController.setSystemBarsColor(
+                color = DarkPurpleGray10
+            )
+        }else{
+            systemUiController.setSystemBarsColor(
+                color = Color.White
+            )
+        }
+        SideEffect {
+            /* the default code did the same cast here - might as well use our new variable! */
+            /* currentWindow.statusBarColor = colorScheme.primary.toArgb()
+             *//* accessing the insets controller to change appearance of the status bar, with 100% less deprecation warnings *//*
+            WindowCompat.getInsetsController(currentWindow, view).isAppearanceLightStatusBars =
+                darkTheme*/
+        }
+    }
+
+
+
+    MaterialTheme(
             colorScheme = colorScheme,
             content = content,
         )
     }
-}
+
 
 @ChecksSdkIntAtLeast(api = Build.VERSION_CODES.S)
 fun supportsDynamicTheming() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
